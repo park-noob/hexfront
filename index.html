@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEXFRONT v2.7 (Government Network & Broadcast Split Update)</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Rajdhani:wght@500;700&display=swap");
+:root {
+  --bg:#080b10; --panel:#10161f; --panel2:#151e2a; --border:#27384c;
+  --text:#d8e7f2; --dim:#7d94a8; --accent:#00d4aa; --blue:#4a9eff;
+  --gold:#ffd052; --orange:#ff7a38; --danger:#ff4c4c;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:Rajdhani,system-ui,sans-serif; overflow:hidden; user-select:none; }
+#hud { position:fixed; inset:0 0 auto 0; height:58px; z-index:8; display:flex; align-items:center; gap:8px; padding:0 14px; background:linear-gradient(180deg,#101722,#0c1118); border-bottom:1px solid var(--border); }
+.logo { font-family:Orbitron,monospace; font-weight:800; color:var(--accent); letter-spacing:3px; margin-right:8px; }
+.stat { min-width:66px; text-align:center; border-left:1px solid var(--border); }
+.stat span { display:block; font-size:10px; color:var(--dim); letter-spacing:1px; }
+.stat strong { display:block; font-family:Orbitron,monospace; font-size:13px; color:var(--text); }
+.spacer { flex:1; }
+button { height:32px; border:1px solid var(--border); background:var(--panel2); color:var(--text); font-family:Rajdhani,system-ui,sans-serif; font-weight:700; letter-spacing:.4px; padding:0 10px; cursor:pointer; }
+button:hover, button.active { border-color:var(--accent); color:var(--accent); background:rgba(0,212,170,.08); }
+#game { position:fixed; top:58px; left:0; right:0; bottom:34px; cursor:default; }
+#status { position:fixed; inset:auto 0 0 0; height:34px; z-index:8; display:flex; align-items:center; gap:16px; padding:0 14px; background:#0d131b; border-top:1px solid var(--border); color:var(--dim); font-size:13px; }
+#message { color:var(--accent); flex:1; }
+#side { position:fixed; right:12px; top:70px; width:235px; z-index:7; background:rgba(14,20,29,.94); border:1px solid var(--border); padding:10px; display:none; box-shadow:0 12px 36px rgba(0,0,0,.4); overflow-y:auto; max-height:calc(100vh - 120px); }
+#side.open { display:block; }
+.panel-title { font-family:Orbitron,monospace; font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:1px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+.hint, .row { color:var(--dim); font-size:12px; line-height:1.35; }
+.row { display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid rgba(39,56,76,.45); padding:3px 0; }
+.row b { color:var(--text); font-weight:700; }
+#menu { position:fixed; z-index:20; min-width:210px; background:rgba(14,20,29,.98); border:1px solid var(--accent); box-shadow:0 10px 30px rgba(0,0,0,.55); padding:8px; display:none; }
+#menu.open { display:block; }
+#menu .title { color:var(--accent); font-family:Orbitron,monospace; font-size:12px; margin:2px 4px 8px; }
+#menu button { display:block; width:100%; margin:5px 0; text-align:left; }
+#menu .disabled { opacity:.45; pointer-events:none; }
+
+.nation-setup { display:flex; align-items:center; gap:6px; border-left:1px solid var(--border); padding-left:10px; }
+.nation-setup label { font-size:11px; color:var(--dim); font-weight:700; }
+.nation-setup input[type="text"] { background:#070a0f; border:1px solid var(--border); color:var(--text); font-family:Rajdhani; font-size:12px; padding:3px 6px; width:75px; height:26px; }
+.nation-setup input[type="color"] { background:none; border:none; width:26px; height:26px; cursor:pointer; padding:0; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="logo">HEXFRONT</div>
+  <div class="stat"><span>금속</span><strong id="metal">0</strong></div>
+  <div class="stat"><span>식량</span><strong id="food">0</strong></div>
+  <div class="stat"><span>보급품</span><strong id="supply">0</strong></div>
+  <div class="stat"><span>총합/(최대 적재량)</span><strong id="totalCapacity">0/0</strong></div>
+  <div class="stat"><span>인력 (사용/최대)</span><strong id="manpower">0/0</strong></div>
+  <div class="stat"><span>유닛</span><strong id="units">0</strong></div>
+  
+  <div class="nation-setup">
+    <label for="nationColor">국가 색상</label>
+    <input type="color" id="nationColor" value="#00d4aa">
+    <input type="text" id="nationName" value="PLAYER 1">
+  </div>
+
+  <div class="spacer"></div>
+  <button class="view active" data-view="NORMAL">일반</button>
+  <button class="view" data-view="ROAD">도로</button>
+  <button class="view" data-view="STRUCTURE">시설</button>
+  <button class="view" data-view="MILITARY">군대</button>
+  <button id="editBtn">편집</button>
+  <button id="endBtn">턴 종료</button>
+  <div class="stat"><span>턴</span><strong id="turn">1</strong></div>
+</div>
+
+<canvas id="game"></canvas>
+
+<aside id="side">
+  <div class="panel-title">EDITOR</div>
+  <div class="grid">
+    <button data-brush="terrain:PLAINS">평지</button>
+    <button data-brush="terrain:MUDFLAT">갯벌</button>
+    <button data-brush="terrain:MOUNTAIN">산</button>
+    <button data-brush="terrain:SEA">바다</button>
+  </div>
+  <div class="grid">
+    <button data-brush="structure:GOVERNMENT">정부</button>
+    <button data-brush="structure:ROAD">도로</button>
+    <button data-brush="structure:DEPOT">저장소</button>
+    <button data-brush="structure:MINE">광산</button>
+    <button data-brush="structure:FARM">농장</button>
+    <button data-brush="structure:FACTORY">공장</button>
+    <button data-brush="structure:MILITARY_BASE">군사기지</button>
+    <button data-brush="structure:RADIO_TOWER">송신탑</button>
+    <button data-brush="structure:CITY_S">소도시</button>
+    <button data-brush="structure:CITY_M">중도시</button>
+    <button data-brush="structure:CITY_L">대도시</button>
+    <button data-brush="structure:BROADCAST">방송국</button>
+    <button data-brush="structure:CLEAR">시설 제거</button>
+  </div>
+  <div class="grid">
+    <button data-brush="unit:ARMY">아군 군대</button>
+    <button data-brush="unit:COMMANDER">지휘관</button>
+    <button data-brush="unit:ENEMY_ARMY">적국 군사</button>
+    <button data-brush="unit:CLEAR">유닛 제거</button>
+  </div>
+  
+  <div class="panel-title" style="margin-top:10px;">TERRITORY OVERLAY</div>
+  <div class="grid">
+    <button data-brush="border:DRAW" style="border-color:var(--orange); color:var(--orange);">국경선 그리기</button>
+    <button data-brush="border:CLEAR">국경선 지우기</button>
+  </div>
+  
+  <p class="hint">플레이 모드: 유닛을 드래그해서 이동합니다. 정부와 도로망에 연결되지 않은 건물은 비활성화됩니다.</p>
+</aside>
+
+<div id="menu"></div>
+
+<div id="status">
+  <div id="message">정부 건물과 연결된 도로망을 구축하여 도시와 생산 시설을 활성화하세요.</div>
+  <div>좌표: <span id="coord">-</span></div>
+  <div>지형: <span id="terrain">-</span></div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const HEX = 28, COLS = 26, ROWS = 15, SQRT3 = Math.sqrt(3);
+const CLOCK_DIRS = [12, 2, 4, 6, 8, 10];
+const DIRS = [
+  { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
+  { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }
+];
+const terrainData = {
+  PLAINS: { name:"평지", moveCost:1, buildable:true, defenseBonus:1.0, fill:"#1c3324", stroke:"#31563c" },
+  MOUNTAIN: { name:"산", moveCost:Infinity, buildable:false, defenseBonus:1.5, fill:"#342b25", stroke:"#665246" },
+  SEA: { name:"바다", moveCost:Infinity, buildable:false, defenseBonus:1.0, fill:"#0d2740", stroke:"#184d75" },
+  MUDFLAT: { name:"갯벌", moveCost:2, buildable:true, defenseBonus:.8, fill:"#2b2818", stroke:"#5c5430" }
+};
+const structureData = {
+  GOVERNMENT:{ name:"정부", icon:"G", color:"#ffd052", manpowerMax:10 },
+  DEPOT:{ name:"저장소", icon:"D", color:"#9dc58d", manpowerCost:2 }, 
+  ROAD:{ name:"도로", icon:"", color:"#5a6573" },
+  MINE:{ name:"광산", icon:"M", color:"#b8bdc7", prod:{ metal:2 }, manpowerCost:3 },
+  FARM:{ name:"농장", icon:"F", color:"#79dd6d", prod:{ food:5 }, manpowerCost:10 },
+  FACTORY:{ name:"공장", icon:"X", color:"#ffad55", prod:{ supplies:1 }, consumes:{ metal:5, food:5 }, manpowerCost:5 },
+  MILITARY_BASE:{ name:"군사기지", icon:"B", color:"#ff7a38" },
+  RADIO_TOWER:{ name:"송신탑", icon:"", color:"#4a9eff", cmdRadius:1 }, 
+  CITY_S:{ name:"소도시", icon:"C", color:"#b8d8ff", manpowerMax:5 },
+  CITY_M:{ name:"중도시", icon:"C", color:"#d2e6ff", manpowerMax:15 },
+  CITY_L:{ name:"대도시", icon:"R", color:"#eef6ff", manpowerMax:30 },
+  BROADCAST:{ name:"방송국", icon:"T", color:"#a370ff", cmdRadius:5, manpowerCost:4 }
+};
+const battleModes = {
+  ATTACK_MODE:{ label:"공격", hpMod:.8 },
+  NORMAL_MODE:{ label:"일반", hpMod:1 },
+  DEFENSE_MODE:{ label:"방어", hpMod:1.2 }
+};
+const state = {
+  turn:1, mode:"PLAY", view:"NORMAL", brush:null, selected:null, selectedTile:null,
+  camera:{ x:0, y:0, zoom:1 }, tiles:new Map(), units:[], drag:null
+};
+
+const playerNation = {
+  get color() { return document.getElementById("nationColor").value; },
+  get name() { return document.getElementById("nationName").value || "NATION"; }
+};
+
+function key(q,r){ return `${q},${r}`; }
+function offsetToAxial(col,row){ return { q: col - Math.floor(row / 2), r: row }; }
+function axialToOffset(q,r){ return { col: q + Math.floor(r / 2), row:r }; }
+function tileAt(q,r){ return state.tiles.get(key(q,r)); }
+function unitAt(q,r){ return state.units.find(u => u.q === q && u.r === r); }
+function dirIndex(clock){ return CLOCK_DIRS.indexOf(clock); }
+function tileByOffset(col,row){ return [...state.tiles.values()].find(t => t.col === col && t.row === row); }
+
+function visualNeighbor(tileOrQ,rOrIndex,maybeIndex){
+  const tile = typeof tileOrQ === "object" ? tileOrQ : tileAt(tileOrQ,rOrIndex);
+  const i = typeof tileOrQ === "object" ? rOrIndex : maybeIndex;
+  if (!tile) return null;
+  const even = tile.col % 2 === 0;
+  const offsets = even
+    ? [[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[0,1]]
+    : [[1,1],[1,0],[0,-1],[-1,0],[-1,1],[0,1]];
+  const [dc,dr] = offsets[i];
+  return tileByOffset(tile.col + dc, tile.row + dr);
+}
+
+function neighbor(q,r,i){
+  const n = visualNeighbor(q,r,i);
+  return n ? { q:n.q, r:n.r } : { q:999999, r:999999 };
+}
+
+function visualDistance(a,b){
+  const start = tileAt(a.q,a.r), goal = tileAt(b.q,b.r);
+  if (!start || !goal) return Infinity;
+  if (start === goal) return 0;
+  const seen = new Set([key(start.q,start.r)]), queue = [{ tile:start, d:0 }];
+  while (queue.length) {
+    const cur = queue.shift();
+    for (let i=0;i<6;i++) {
+      const nt = visualNeighbor(cur.tile,i);
+      if (!nt || seen.has(key(nt.q,nt.r))) continue;
+      if (nt === goal) return cur.d + 1;
+      seen.add(key(nt.q,nt.r)); queue.push({ tile:nt, d:cur.d + 1 });
+    }
+  }
+  return Infinity;
+}
+const dist = visualDistance;
+
+function canUnitAct(unit){ return unit.actionTurn !== state.turn; }
+function canStructureAct(tile){ return !tile.structure || (tile.structure.actionTurn !== state.turn && tile.structure.govConnected); }
+
+function makeStructure(type){
+  const base = { type, active:true, actionTurn:0, govConnected:true };
+  if (type === "DEPOT") base.stored = { metal:30, food:30, supplies:15 };
+  return base;
+}
+
+/* 정부 및 활성화된 도로망 체크 알고리즘 */
+function updateGovernmentNetwork() {
+  const govTiles = [];
+  const activeRoadKeys = new Set();
+  
+  // 1단계: 모든 정부 건물의 위치 수집
+  for (const tile of state.tiles.values()) {
+    if (tile.structure && tile.structure.type === "GOVERNMENT" && tile.structure.active) {
+      govTiles.push(tile);
+    }
+  }
+  
+  // 2단계: 정부 건물로부터 시작하여 연결된 활성화된 도로망을 탐색 (BFS)
+  if (govTiles.length > 0) {
+    const queue = [];
+    const visited = new Set();
+    
+    govTiles.forEach(t => {
+      const k = key(t.q, t.r);
+      queue.push(t);
+      visited.add(k);
+    });
+    
+    while (queue.length > 0) {
+      const cur = queue.shift();
+      if (cur.road) {
+        activeRoadKeys.add(key(cur.q, cur.r));
+      }
+      
+      for (let i = 0; i < 6; i++) {
+        const nt = visualNeighbor(cur, i);
+        if (!nt) continue;
+        const nk = key(nt.q, nt.r);
+        if (visited.has(nk)) continue;
+        
+        // 정부 건물과 직접 닿아 있거나 끊어지지 않는 도로 타일만 네트워크로 확장
+        if (nt.road || (nt.structure && nt.structure.type === "GOVERNMENT" && nt.structure.active)) {
+          visited.add(nk);
+          queue.push(nt);
+        }
+      }
+    }
+  }
+  
+  // 3단계: 모든 시설 타일에 대해 정부와 닿았거나 활성화된 도로와 접하는지 판단
+  for (const tile of state.tiles.values()) {
+    if (!tile.structure) continue;
+    
+    // 정부 건물 자체는 항상 연결된 것으로 간주
+    if (tile.structure.type === "GOVERNMENT") {
+      tile.structure.govConnected = true;
+      continue;
+    }
+    
+    let isConnected = false;
+    
+    // 타일 자체가 활성화된 도로망 위에 있는 경우
+    if (tile.road && activeRoadKeys.has(key(tile.q, tile.r))) {
+      isConnected = true;
+    } else {
+      // 인접 6개 타일 중 하나라도 정부 건물이거나 활성화된 도로가 있는지 체크
+      for (let i = 0; i < 6; i++) {
+        const nt = visualNeighbor(tile, i);
+        if (!nt) continue;
+        
+        if (nt.structure && nt.structure.type === "GOVERNMENT" && nt.structure.active) {
+          isConnected = true;
+          break;
+        }
+        if (nt.road && activeRoadKeys.has(key(nt.q, nt.r))) {
+          isConnected = true;
+          break;
+        }
+      }
+    }
+    
+    tile.structure.govConnected = isConnected;
+  }
+}
+
+function initMap(){
+  state.tiles.clear();
+  for (let row=0; row<ROWS; row++) for (let col=0; col<COLS; col++) {
+    const { q, r } = offsetToAxial(col,row);
+    let terrainType = "PLAINS";
+    if (row === 0 || col === 0 || row === ROWS - 1 || col === COLS - 1) terrainType = "SEA";
+    if ((col === 7 && row === 4) || (col === 8 && row === 4) || (col === 9 && row === 5)) terrainType = "MOUNTAIN";
+    if ((col === 4 && row === 6) || (col === 5 && row === 7) || (col === 12 && row === 3)) terrainType = "MUDFLAT";
+    state.tiles.set(key(q,r), { q, r, col, row, terrainType, structure:null, road:false, radio:false, unit:null, border:null });
+  }
+  
+  // 기본 기지 및 정부 시스템망 배치
+  placeStructure(2,2,"GOVERNMENT");
+  placeStructure(2,3,"ROAD");
+  placeStructure(2,4,"DEPOT"); 
+  placeStructure(3,3,"ROAD"); 
+  placeStructure(4,3,"ROAD");
+  placeStructure(5,3,"MILITARY_BASE"); 
+  placeStructure(4,4,"RADIO_TOWER"); 
+  placeStructure(6,4,"CITY_M");
+  placeStructure(14,6,"CITY_L"); 
+  placeStructure(15,6,"ROAD");
+  placeStructure(16,6,"BROADCAST"); 
+  
+  placeStructure(9,3,"MINE"); 
+  placeStructure(10,3,"ROAD"); 
+  placeStructure(11,3,"FARM"); 
+  placeStructure(12,3,"FACTORY");
+  
+  spawnUnit("ARMY", ...Object.values(offsetToAxial(3,5)));
+  spawnUnit("COMMANDER", ...Object.values(offsetToAxial(5,5)));
+  
+  syncTileUnits(); 
+  fitMapToRect(); 
+  updateGovernmentNetwork();
+  updateHud();
+}
+
+function placeStructure(col,row,type){
+  const a = offsetToAxial(col,row), tile = tileAt(a.q,a.r);
+  if (!tile) return;
+  if (type === "ROAD") tile.road = true;
+  else if (type === "RADIO_TOWER") tile.radio = true;
+  else tile.structure = makeStructure(type);
+}
+
+function spawnUnit(type,q,r){
+  const tile = tileAt(q,r);
+  if (!tile || unitAt(q,r)) return null;
+  const isEnemy = type === "ENEMY_ARMY";
+  const unit = {
+    id: crypto.randomUUID(), type: isEnemy ? "ARMY" : type, isEnemy, q, r, actionTurn:0, rotationTurn:0,
+    hp:10, maxHp:10, willpower:10, supplies:type === "COMMANDER" ? 3 : 5,
+    direction:12, battleMode:"NORMAL_MODE", battles:0,
+    commType:type === "COMMANDER" ? "RADIO_COMM" : null,
+    move:type === "COMMANDER" ? 2 : 1,
+    color:isEnemy ? "#ff4c4c" : (type === "COMMANDER" ? "#ffd052" : "#4a9eff"),
+    cmdRadius: type === "COMMANDER" ? 3 : 0 
+  };
+  state.units.push(unit); syncTileUnits(); return unit;
+}
+
+function syncTileUnits(){
+  for (const tile of state.tiles.values()) tile.unit = null;
+  for (const unit of state.units) {
+    const tile = tileAt(unit.q, unit.r);
+    if (tile) tile.unit = unit;
+  }
+}
+
+function tileToPixel(tile){ return { x:HEX*1.5*tile.col, y:HEX*SQRT3*(tile.row + (tile.col % 2)*.5) }; }
+function unitToPixel(unit){ const tile = tileAt(unit.q,unit.r); return tile ? tileToPixel(tile) : { x:0, y:0 }; }
+function worldToScreen(p){ return { x:p.x*state.camera.zoom + canvas.width/2 + state.camera.x, y:p.y*state.camera.zoom + canvas.height/2 + state.camera.y }; }
+function screenToWorld(x,y){ return { x:(x-canvas.width/2-state.camera.x)/state.camera.zoom, y:(y-canvas.height/2-state.camera.y)/state.camera.zoom }; }
+function pickTile(wx,wy){
+  let best=null, bestDist=Infinity;
+  for (const tile of state.tiles.values()) {
+    const p = tileToPixel(tile), dx=p.x-wx, dy=p.y-wy, d=Math.hypot(dx,dy);
+    if (d < bestDist) { bestDist=d; best=tile; }
+  }
+  return bestDist <= HEX*1.05 ? best : null;
+}
+function fitMapToRect(){
+  const pts = [...state.tiles.values()].map(tileToPixel);
+  const minX=Math.min(...pts.map(p=>p.x))-HEX, maxX=Math.max(...pts.map(p=>p.x))+HEX;
+  const minY=Math.min(...pts.map(p=>p.y))-HEX, maxY=Math.max(...pts.map(p=>p.y))+HEX;
+  const scale = Math.min(canvas.width/(maxX-minX), canvas.height/(maxY-minY))*.9;
+  state.camera.zoom = Math.max(.45, Math.min(1.4, scale));
+  state.camera.x = -((minX+maxX)/2)*state.camera.zoom;
+  state.camera.y = -((minY+maxY)/2)*state.camera.zoom;
+}
+
+function totalResources(){
+  const total = { metal:0, food:0, supplies:0, manpowerCost:0, manpowerMax:0, capacity:0 };
+  for (const tile of state.tiles.values()) {
+    const s = tile.structure;
+    if (!s) continue;
+    
+    // 정부 통제망에 잡힌 시설물만 자원 한도 및 인력 기능 제공
+    if (s.govConnected && s.active) {
+      if (s.type === "DEPOT" && s.stored) {
+        total.metal += s.stored.metal; total.food += s.stored.food; total.supplies += s.stored.supplies;
+        total.capacity += 100;
+      }
+      const data = structureData[s.type];
+      if (data) {
+        if (data.manpowerMax) total.manpowerMax += data.manpowerMax;
+        if (data.manpowerCost) total.manpowerCost += data.manpowerCost;
+      }
+    }
+  }
+  return total;
+}
+
+function depotFor(tile){
+  const seen = new Set([key(tile.q,tile.r)]), queue = [tile];
+  while (queue.length) {
+    const cur = queue.shift();
+    if (cur.structure && cur.structure.type === "DEPOT" && cur.structure.govConnected && cur.structure.active) return cur.structure;
+    for (let i=0; i<6; i++) {
+      const n = neighbor(cur.q, cur.r, i), nt = tileAt(n.q,n.r);
+      if (!nt || seen.has(key(n.q,n.r))) continue;
+      if (nt.road || nt.structure || nt.radio) {
+        seen.add(key(n.q,n.r)); queue.push(nt);
+      }
+    }
+  }
+  return null;
+}
+
+function tileInCommand(tile){
+  for (const u of state.units) if (u.type === "COMMANDER" && dist(u,tile) <= 3) return true;
+  for (const t of state.tiles.values()) if (t.radio && dist(t,tile) <= 1) return true;
+  for (const t of state.tiles.values()) if (t.structure && t.structure.type === "BROADCAST" && t.structure.govConnected && t.structure.active && dist(t,tile) <= 5) return true;
+  return false;
+}
+function unitControlled(unit){ return unit.type === "COMMANDER" || tileInCommand(tileAt(unit.q,unit.r)); }
+function unitInMoveCommand(unit){
+  if (unit.type === "COMMANDER") return true;
+  for (const u of state.units) if (u.type === "COMMANDER" && dist(u, unit) <= 2) return true;
+  for (const t of state.tiles.values()) if (t.radio && dist(t, unit) <= 2) return true;
+  return false;
+}
+
+function checkAttackTargetable(unit, targetTile){
+  if (!unit || unit.isEnemy || unit.type !== "ARMY") return false;
+  for (const i of attackDirIndices(unit)) {
+    const n = attackNeighbor(unit, i);
+    if (n && n.q === targetTile.q && n.r === targetTile.r) return true;
+  }
+  return false;
+}
+
+function reachableTiles(unit){
+  if (!canUnitAct(unit) || unit.isEnemy || !unitInMoveCommand(unit)) return new Map();
+  if (unit.type === "COMMANDER") {
+    const reached = new Map();
+    for (const tile of state.tiles.values()) {
+      if (tile.q === unit.q && tile.r === unit.r) continue;
+      if (dist(unit, tile) > 2) continue;
+      if (unitAt(tile.q, tile.r)) continue;
+      if (!Number.isFinite(terrainData[tile.terrainType].moveCost)) continue;
+      reached.set(key(tile.q, tile.r), dist(unit, tile));
+    }
+    return reached;
+  }
+  if (unit.type === "ARMY") {
+    const reached = new Map();
+    for (const i of attackDirIndices(unit)) {
+      const n = attackNeighbor(unit, i), tile = n && tileAt(n.q, n.r);
+      if (!tile || unitAt(n.q, n.r)) continue;
+      if (!Number.isFinite(terrainData[tile.terrainType].moveCost)) continue;
+      reached.set(key(n.q, n.r), 1);
+    }
+    return reached;
+  }
+  return new Map();
+}
+function canMoveTo(unit,q,r){ return reachableTiles(unit).has(key(q,r)); }
+function attackDirIndices(unit){
+  const i = dirIndex(unit.direction);
+  if (unit.battleMode === "ATTACK_MODE") return [i];
+  if (unit.battleMode === "DEFENSE_MODE") return [0,1,2,3,4,5];
+  return [i, (i+5)%6, (i+1)%6];
+}
+function attackNeighbor(unit, edgeIndex){
+  const tile = tileAt(unit.q, unit.r);
+  if (!tile) return null;
+  const center = tileToPixel(tile), edgePts = corners(center.x, center.y, HEX);
+  const a = edgePts[edgeIndex], b = edgePts[(edgeIndex + 1) % 6];
+  const vx = (a.x + b.x) / 2 - center.x, vy = (a.y + b.y) / 2 - center.y;
+  let best = null, bestDot = -Infinity;
+  for (let i = 0; i < 6; i++) {
+    const nt = visualNeighbor(tile, i);
+    if (!nt) continue;
+    const n = { q:nt.q, r:nt.r };
+    const np = tileToPixel(nt), dot = (np.x - center.x) * vx + (np.y - center.y) * vy;
+    if (dot > bestDot) { bestDot = dot; best = n; }
+  }
+  return best;
+}
+function applyBattleModeStats(unit){
+  const base = 10, ratio = unit.hp / unit.maxHp;
+  unit.maxHp = Math.round(base * battleModes[unit.battleMode].hpMod);
+  unit.hp = Math.max(1, Math.min(unit.maxHp, Math.round(unit.maxHp * ratio)));
+}
+function rotateUnit(unit, step){
+  if (!canUnitAct(unit) || unit.rotationTurn === state.turn) { setMessage("이 유닛은 이번 턴에 더 이상 방향을 바꿀 수 없습니다."); return; }
+  const i = dirIndex(unit.direction);
+  unit.direction = CLOCK_DIRS[(i + step + 6) % 6];
+  unit.rotationTurn = state.turn; unit.actionTurn = state.turn;
+  setMessage(`방향 전환 완료: ${unit.direction}시`);
+  closeMenu(); render();
+}
+function setBattleMode(unit, mode){
+  if (unit.type !== "ARMY") return;
+  if (!canUnitAct(unit)) { setMessage("이 유닛은 이번 턴 행동을 이미 사용했습니다."); return; }
+  unit.battleMode = mode; applyBattleModeStats(unit); unit.actionTurn = state.turn;
+  setMessage(`${battleModes[mode].label} 모드로 전환했습니다.`);
+  closeMenu(); render();
+}
+function moveUnit(unit,q,r){
+  if (unit.isEnemy) { setMessage("적국 군사는 이동시킬 수 없습니다."); return false; }
+  if (!unitControlled(unit)) { setMessage("지휘권 바깥에 있는 유닛은 조작할 수 없습니다."); return false; }
+  if (!canMoveTo(unit,q,r)) { setMessage("이동할 수 없는 타일입니다. 이동력, 지형, 턴 행동을 확인하세요."); return false; }
+  unit.q=q; unit.r=r; unit.supplies=Math.max(0, unit.supplies-1); unit.actionTurn=state.turn;
+  syncTileUnits(); setMessage(`${unit.type === "ARMY" ? "군대" : "지휘관"} 이동 완료: ${axialToOffset(q,r).col}, ${axialToOffset(q,r).row}`);
+  render(); updateHud(); return true;
+}
+
+function corners(cx,cy,size){ const pts=[]; for (let i=0;i<6;i++){ const a=Math.PI/180*(60*i); pts.push({ x:cx+Math.cos(a)*size, y:cy+Math.sin(a)*size }); } return pts; }
+function drawHex(cx,cy,size,fill,stroke,width=1){
+  const pts = corners(cx,cy,size); ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  for (let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.closePath(); if (fill) { ctx.fillStyle=fill; ctx.fill(); } ctx.strokeStyle=stroke; ctx.lineWidth=width; ctx.stroke();
+}
+function drawRoads(){
+  ctx.strokeStyle = "#5a6573"; ctx.lineWidth = Math.max(4, 6*state.camera.zoom);
+  ctx.lineCap = "round";
+  for (const tile of state.tiles.values()) {
+    if (!tile.road) continue;
+    const a = worldToScreen(tileToPixel(tile));
+    for (let i=0;i<6;i++) {
+      const nt = visualNeighbor(tile,i);
+      if (!nt) continue;
+      if (nt.road) {
+        const b = worldToScreen(tileToPixel(nt)); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, Math.max(4, 7 * state.camera.zoom), 0, Math.PI * 2);
+    ctx.fillStyle = "#717e91";
+    ctx.fill();
+  }
+  ctx.lineCap = "butt";
+}
+
+function drawBorders() {
+  ctx.save();
+  ctx.lineCap = "round";
+  for (const tile of state.tiles.values()) {
+    if (!tile.border) continue;
+    const a = worldToScreen(tileToPixel(tile));
+    ctx.strokeStyle = tile.border.color; 
+    ctx.lineWidth = Math.max(3, 4.5 * state.camera.zoom);
+    for (let i=0; i<6; i++) {
+      const nt = visualNeighbor(tile, i);
+      if (!nt) continue;
+      if (nt.border && nt.border.color === tile.border.color) {
+        const b = worldToScreen(tileToPixel(nt)); 
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+    }
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, Math.max(3.5, 5 * state.camera.zoom), 0, Math.PI * 2);
+    ctx.fillStyle = tile.border.color; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawRadioLinks(){
+  ctx.strokeStyle = "rgba(74,158,255,.85)";
+  ctx.lineWidth = Math.max(1, 1.4 * state.camera.zoom);
+  for (const tile of state.tiles.values()) {
+    if (!tile.radio) continue;
+    const a = worldToScreen(tileToPixel(tile));
+    for (let i=0;i<6;i++) {
+      const nt = visualNeighbor(tile,i);
+      if (!nt || !nt.radio) continue;
+      const b = worldToScreen(tileToPixel(nt));
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+  }
+  for (const tile of state.tiles.values()) {
+    if (!tile.radio) continue;
+    const p = worldToScreen(tileToPixel(tile));
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(2.5, 4 * state.camera.zoom), 0, Math.PI * 2);
+    ctx.fillStyle = "#4a9eff"; ctx.fill();
+  }
+}
+
+function drawCommandNetworkCircles(){
+  let shouldDraw = false;
+  if (state.selected && state.selected.type === "COMMANDER") shouldDraw = true;
+  if (state.selectedTile) {
+    if (state.selectedTile.radio) shouldDraw = true;
+    if (state.selectedTile.structure && state.selectedTile.structure.type === "BROADCAST") shouldDraw = true;
+  }
+  if (!shouldDraw) return; 
+
+  const z = state.camera.zoom;
+  for (const tile of state.tiles.values()) {
+    if (tile.structure && tile.structure.type === "BROADCAST" && tile.structure.govConnected && tile.structure.active) {
+      const p = worldToScreen(tileToPixel(tile));
+      ctx.beginPath(); ctx.arc(p.x, p.y, HEX * z * (5 + 0.5), 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(163, 112, 255, 0.85)"; 
+      ctx.lineWidth = 2.5; ctx.setLineDash([4, 4]); ctx.stroke();
+    }
+  }
+  for (const u of state.units) {
+    if (u.type === "COMMANDER") {
+      const p = worldToScreen(unitToPixel(u));
+      ctx.beginPath(); ctx.arc(p.x, p.y, HEX * z * (3 + 0.5), 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255, 208, 82, 0.85)"; 
+      ctx.lineWidth = 2.5; ctx.setLineDash([6, 3]); ctx.stroke();
+    }
+  }
+  for (const tile of state.tiles.values()) {
+    if (tile.radio) {
+      const p = worldToScreen(tileToPixel(tile));
+      ctx.beginPath(); ctx.arc(p.x, p.y, HEX * z * (1 + 0.5), 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(155, 100, 255, 0.9)"; 
+      ctx.lineWidth = 2.5; ctx.setLineDash([2, 2]); ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]); 
+}
+
+function drawStructures(){
+  for (const tile of state.tiles.values()) {
+    const s = tile.structure; if (!s || s.type === "ROAD" || s.type === "RADIO_TOWER") continue;
+    const data = structureData[s.type], p = worldToScreen(tileToPixel(tile)), z = state.camera.zoom;
+    
+    // 유효 작동 검증: 사용자가 끄거나 정부 연결(도로망)이 유실되면 알파값 하향 처리
+    const isOperable = s.active && s.govConnected;
+    ctx.globalAlpha = isOperable ? 1 : .3;
+    
+    ctx.fillStyle = data.color; ctx.font = `${Math.max(11,15*z)}px Orbitron`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(data.icon,p.x,p.y-5*z);
+    ctx.font = `${Math.max(8,9*z)}px Rajdhani`; ctx.fillText(data.name,p.x,p.y+13*z);
+    
+    if (!s.govConnected) {
+      ctx.fillStyle = "rgba(255,76,76,1)"; ctx.font = `bold ${Math.max(8,9*z)}px Rajdhani`; ctx.fillText("INACTIVE",p.x,p.y-20*z);
+    } else if (s.actionTurn === state.turn) { 
+      ctx.fillStyle = "rgba(74,158,255,.9)"; ctx.fillText("USED",p.x,p.y-20*z); 
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+function drawBar(x,y,w,h,ratio,color){ ctx.fillStyle="#101010"; ctx.fillRect(x,y,w,h); ctx.fillStyle=color; ctx.fillRect(x,y,w*Math.max(0,Math.min(1,ratio)),h); }
+
+function drawAttackIndicators(unit,cx,cy,size){
+  if (unit.type !== "ARMY") return;
+  const pts = corners(cx,cy,size*.88);
+  for (const i of attackDirIndices(unit)) {
+    const a = pts[i], b = pts[(i+1)%6], mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const vx=mx-cx, vy=my-cy, len=Math.hypot(vx,vy), nx=vx/len, ny=vy/len, px=-ny, py=nx, t=size*.16;
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx-nx*t+px*t*.48,my-ny*t+py*t*.48); ctx.lineTo(mx-nx*t-px*t*.48,my-ny*t-py*t*.48); ctx.closePath();
+    ctx.fillStyle = unit.isEnemy ? "rgba(210,50,50,.8)" : (unit.battleMode === "DEFENSE_MODE" ? "rgba(0,212,170,.75)" : "rgba(255,122,56,.8)"); ctx.fill();
+  }
+}
+function drawUnit(unit){
+  const p = worldToScreen(unitToPixel(unit)), z = state.camera.zoom, size = HEX*z;
+  if (state.selected === unit) { drawHex(p.x,p.y,size-4,"rgba(0,212,170,.1)",unit.color,2.5); }
+  if (unit.type === "ARMY") drawAttackIndicators(unit,p.x,p.y,size);
+  ctx.beginPath(); ctx.arc(p.x,p.y,size*.34,0,Math.PI*2); ctx.fillStyle="#101620"; ctx.fill(); ctx.strokeStyle=unit.color; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle=unit.color; ctx.font=`${Math.max(13,17*z)}px Orbitron`; ctx.textAlign="center"; ctx.textBaseline="middle"; 
+  ctx.fillText(unit.isEnemy ? "E" : (unit.type === "ARMY" ? "A" : "C"),p.x,p.y);
+  
+  ctx.font=`${Math.max(8,10*z)}px Orbitron`; ctx.fillStyle=unit.supplies === 0 ? "#ff4c4c" : "#ffd052"; ctx.fillText(unit.supplies || "X",p.x-size*.42,p.y-size*.24);
+  if (unit.type === "ARMY") drawBar(p.x-size*.44,p.y+size*.16,size*.32,4,unit.willpower/10,"#ff7a38");
+  drawBar(p.x+size*.10,p.y+size*.16,size*.34,4,unit.hp/unit.maxHp,"#00d4aa");
+  if (unit.actionTurn === state.turn && !unit.isEnemy) { ctx.fillStyle="#ff4c4c"; ctx.font=`${Math.max(8,9*z)}px Rajdhani`; ctx.fillText("USED",p.x,p.y-size*.47); }
+}
+
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="#070a0f"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const reachable = state.selected ? reachableTiles(state.selected) : new Map();
+  for (const tile of state.tiles.values()) {
+    const p = worldToScreen(tileToPixel(tile)), z = state.camera.zoom, data = terrainData[tile.terrainType];
+    let fill=data.fill, stroke=data.stroke;
+    
+    if (tile.border) {
+      ctx.save();
+      drawHex(p.x, p.y, HEX*z-1, tile.border.color, "transparent", 0);
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.fillStyle = tile.border.color; ctx.globalAlpha = 0.08;
+      ctx.fillRect(p.x - HEX*z, p.y - HEX*z, HEX*z*2, HEX*z*2);
+      ctx.restore();
+    }
+
+    if (state.view === "STRUCTURE" && !tile.structure && !tile.road && !tile.radio) fill = "rgba(20,26,34,.55)";
+    if (state.view === "MILITARY" && !tile.unit) fill = "rgba(20,26,34,.55)";
+    drawHex(p.x,p.y,HEX*z-1,fill,stroke,1);
+    if (reachable.has(key(tile.q,tile.r))) drawHex(p.x,p.y,HEX*z-5,"rgba(0,212,170,.2)","#00d4aa",2);
+    if (z > .72) { ctx.fillStyle="rgba(216,231,242,.45)"; ctx.font=`${Math.max(8,9*z)}px Rajdhani`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(data.name,p.x,p.y+HEX*z*.43); }
+  }
+  if (state.view === "ROAD" || state.view === "NORMAL") drawRoads();
+  if (state.view === "NORMAL" || state.view === "STRUCTURE") drawRadioLinks();
+  
+  drawBorders();
+  drawStructures();
+  drawCommandNetworkCircles();
+  
+  for (const unit of state.units) drawUnit(unit);
+  if (state.drag) {
+    ctx.globalAlpha = .7; drawUnit({ ...state.drag.unit, q:state.drag.unit.q, r:state.drag.unit.r }); ctx.globalAlpha = 1;
+  }
+}
+
+function updateHud(){
+  const total = totalResources();
+  const sumResources = total.metal + total.food + total.supplies;
+  
+  document.getElementById("metal").textContent = total.metal;
+  document.getElementById("food").textContent = total.food;
+  document.getElementById("supply").textContent = total.supplies;
+  document.getElementById("totalCapacity").textContent = `${sumResources}/${total.capacity}`;
+  document.getElementById("manpower").textContent = `${total.manpowerCost}/${total.manpowerMax}`;
+  document.getElementById("units").textContent = state.units.length;
+  document.getElementById("turn").textContent = state.turn;
+}
+
+function setMessage(text){ document.getElementById("message").textContent=text; }
+function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight-58-34; fitMapToRect(); render(); }
+function closeMenu(){ const m=document.getElementById("menu"); m.classList.remove("open"); m.innerHTML=""; }
+function showMenu(html,x,y){
+  const m=document.getElementById("menu"); m.innerHTML=html; m.style.left=Math.min(x+8,window.innerWidth-230)+"px"; m.style.top=Math.min(y+8,window.innerHeight-260)+"px"; m.classList.add("open");
+}
+
+function unitInfo(unit){
+  const o = axialToOffset(unit.q,unit.r);
+  if (unit.isEnemy) {
+    showMenu(`<div class="title" style="color:#ff4c4c;">적국 군사</div>
+      <div class="row"><span>HP</span><b>${unit.hp}/${unit.maxHp}</b></div>
+      <div class="row"><span>보급</span><b>${unit.supplies}</b></div>
+      <div class="row"><span>방향</span><b>${unit.direction}시</b></div>
+      <div class="row"><span>좌표</span><b>${o.col},${o.row}</b></div>`, lastMouse.x, lastMouse.y);
+    return;
+  }
+  const combatRows = unit.type === "ARMY" ? `
+    <div class="row"><span>의지력</span><b>${unit.willpower}/10</b></div>
+    <div class="row"><span>전투모드</span><b>${battleModes[unit.battleMode].label}</b></div>` : "";
+  const combatButtons = unit.type === "ARMY" ? `
+    <button data-mode="ATTACK_MODE">공격 모드</button><button data-mode="NORMAL_MODE">일반 모드</button><button data-mode="DEFENSE_MODE">방어 모드</button>` : "";
+  showMenu(`<div class="title">${unit.type === "ARMY" ? "아군 군대" : "지휘관"}</div>
+    <div class="row"><span>HP</span><b>${unit.hp}/${unit.maxHp}</b></div>
+    ${combatRows}
+    <div class="row"><span>보급</span><b>${unit.supplies || "X"}</b></div>
+    <div class="row"><span>방향</span><b>${unit.direction}시</b></div>
+    <div class="row"><span>좌표</span><b>${o.col},${o.row}</b></div>
+    <button data-turn="-1">왼쪽 60도</button><button data-turn="1">오른쪽 60도</button>
+    ${combatButtons}`, lastMouse.x, lastMouse.y);
+  document.querySelectorAll("[data-turn]").forEach(b => b.onclick = () => rotateUnit(unit, Number(b.dataset.turn)));
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setBattleMode(unit, b.dataset.mode));
+}
+
+function structureInfo(tile){
+  const s = tile.structure, data = structureData[s.type], depot = depotFor(tile), used = s.actionTurn === state.turn;
+  let detail = `<div class="title">${data.name}</div>`;
+  
+  if(!s.govConnected) {
+    detail += `<div class="row"><span style="color:var(--danger)">망 연결 상태</span><b style="color:var(--danger)">미연결 (비활성)</b></div>`;
+  } else {
+    detail += `<div class="row"><span>상태</span><b>${s.active ? "작동 중" : "정지됨"}</b></div>`;
+  }
+  
+  if (s.type === "DEPOT") {
+    if (data.manpowerCost) detail += `<div class="row"><span>필요 인력</span><b>${data.manpowerCost}</b></div>`;
+  } else {
+    if (data.manpowerCost) detail += `<div class="row"><span>필요 인력</span><b>${data.manpowerCost}</b></div>`;
+    if (data.manpowerMax) detail += `<div class="row"><span>제공 인력</span><b>${data.manpowerMax}</b></div>`;
+    if (depot && s.type !== "DEPOT") detail += `<div class="row"><span>연결</span><b>저장소 연결됨</b></div>`;
+  }
+  
+  const blockClass = (used || !s.govConnected) ? "disabled" : "";
+  detail += `<button id="toggleStruct" class="${blockClass}">${s.active ? "작동 멈춤" : "작동 시작"}</button>`;
+  
+  if (s.type === "MILITARY_BASE") {
+    detail += `<button id="spawnArmy" class="${blockClass}">군대 생성 (metal 10)</button><button id="spawnCommander" class="${blockClass}">지휘관 생성 (food 10)</button>`;
+  }
+  if (!tile.road) detail += `<button id="addRoad">도로 추가 (metal 1)</button>`;
+  if (!tile.radio) detail += `<button id="addRadio">송신탑 추가 (metal 8, supplies 2)</button>`;
+  
+  showMenu(detail,lastMouse.x,lastMouse.y);
+  
+  const toggle = document.getElementById("toggleStruct");
+  if (toggle) toggle.onclick = () => { 
+    if (!canStructureAct(tile)) return; 
+    s.active=!s.active; s.actionTurn=state.turn; 
+    updateGovernmentNetwork(); closeMenu(); render(); updateHud(); 
+  };
+  
+  const spend = (cost) => {
+    const d = depot || [...state.tiles.values()].find(t => t.structure && t.structure.type === "DEPOT" && t.structure.govConnected && t.structure.active)?.structure;
+    if (!d || !d.stored) return false;
+    if ((cost.metal||0)>d.stored.metal || (cost.food||0)>d.stored.food || (cost.supplies||0)>d.stored.supplies) return false;
+    d.stored.metal -= cost.metal || 0; d.stored.food -= cost.food || 0; d.stored.supplies -= cost.supplies || 0; return true;
+  };
+  
+  const spawn = (type,cost) => { 
+    if (!canStructureAct(tile)) return; 
+    if (!spend(cost)) { setMessage("연결된 저장소의 자원이 부족합니다."); return; } 
+    spawnNearby(type,tile) || spawnUnit(type,tile.q,tile.r); 
+    s.actionTurn=state.turn; updateHud(); closeMenu(); render(); 
+  };
+  
+  const army = document.getElementById("spawnArmy"), cmd = document.getElementById("spawnCommander");
+  if (army) army.onclick = () => spawn("ARMY",{ metal:10 });
+  if (cmd) cmd.onclick = () => spawn("COMMANDER",{ food:10 });
+  
+  const addOverlay = (kind,cost) => {
+    if (!spend(cost)) { setMessage("연결된 저장소의 자원이 부족합니다."); return; }
+    if (kind === "ROAD") tile.road = true;
+    if (kind === "RADIO_TOWER") tile.radio = true;
+    updateGovernmentNetwork(); updateHud(); closeMenu(); render();
+  };
+  const addRoad = document.getElementById("addRoad"), addRadio = document.getElementById("addRadio");
+  if (addRoad) addRoad.onclick = () => addOverlay("ROAD",{ metal:1 });
+  if (addRadio) addRadio.onclick = () => addOverlay("RADIO_TOWER",{ metal:8, supplies:2 });
+}
+
+const buildOptions = [
+  { type:"ROAD", label:"도로", cost:{ metal:1 } },
+  { type:"GOVERNMENT", label:"정부", cost:{ metal:20, food:10 } },
+  { type:"DEPOT", label:"저장소", cost:{ metal:8 } },
+  { type:"MINE", label:"광산", cost:{ metal:6 } },
+  { type:"FARM", label:"농장", cost:{ food:6 } },
+  { type:"FACTORY", label:"공장", cost:{ metal:12, food:8 } },
+  { type:"MILITARY_BASE", label:"군부대", cost:{ metal:15, supplies:3 } },
+  { type:"RADIO_TOWER", label:"송신탑", cost:{ metal:8, supplies:2 } },
+  { type:"CITY_S", label:"소도시", cost:{ metal:10, food:10 } },
+  { type:"CITY_M", label:"중도시", cost:{ metal:20, food:20 } },
+  { type:"CITY_L", label:"대도시", cost:{ metal:40, food:40 } },
+  { type:"BROADCAST", label:"방송국", cost:{ metal:25, supplies:10 } }
+];
+
+function costText(cost){ return Object.entries(cost).map(([k,v]) => `${k} ${v}`).join(", "); }
+
+function spendBuildCost(tile,cost){
+  const depot = depotFor(tile) || [...state.tiles.values()].find(t => t.structure && t.structure.type === "DEPOT" && t.structure.govConnected && t.structure.active)?.structure;
+  if (!depot || !depot.stored) return false;
+  if ((cost.metal||0) > depot.stored.metal || (cost.food||0) > depot.stored.food || (cost.supplies||0) > depot.stored.supplies) return false;
+  depot.stored.metal -= cost.metal || 0; depot.stored.food -= cost.food || 0; depot.stored.supplies -= cost.supplies || 0;
+  return true;
+}
+
+function showBuildMenu(tile){
+  if (!terrainData[tile.terrainType].buildable) { setMessage("이 지형에는 시설을 지을 수 없습니다."); return; }
+  if (tile.structure) { structureInfo(tile); return; }
+  
+  const rows = buildOptions
+    .filter(opt => !(opt.type === "ROAD" && tile.road) && !(opt.type === "RADIO_TOWER" && tile.radio))
+    .map(opt => `<button data-build="${opt.type}">${opt.label} 건설 (${costText(opt.cost)})</button>`).join("");
+    
+  showMenu(`<div class="title">시설 건설</div>
+    <div class="row"><span>타일</span><b>${terrainData[tile.terrainType].name}</b></div>
+    ${rows}`, lastMouse.x, lastMouse.y);
+    
+  document.querySelectorAll("[data-build]").forEach(btn => {
+    btn.onclick = () => {
+      const opt = buildOptions.find(item => item.type === btn.dataset.build);
+      if (!opt) return;
+      if (!spendBuildCost(tile,opt.cost)) { setMessage("저장소 자원이 부족합니다."); return; }
+      if (opt.type === "ROAD") tile.road = true;
+      else if (opt.type === "RADIO_TOWER") tile.radio = true;
+      else {
+        tile.structure = makeStructure(opt.type);
+        tile.structure.actionTurn = state.turn;
+      }
+      updateGovernmentNetwork(); updateHud(); closeMenu(); setMessage(`${opt.label} 건설 완료`); render();
+    };
+  });
+}
+
+function spawnNearby(type,tile){
+  for (let i=0;i<6;i++){ const nt=visualNeighbor(tile,i); if (nt && !unitAt(nt.q,nt.r) && Number.isFinite(terrainData[nt.terrainType].moveCost)) return spawnUnit(type,nt.q,nt.r); }
+  return null;
+}
+
+function runProduction(){
+  for (const tile of state.tiles.values()) {
+    const s = tile.structure, data = s && structureData[s.type]; 
+    if (!s || !s.active || !s.govConnected || !data || !data.prod) continue;
+    
+    const depot = depotFor(tile); if (!depot || !depot.stored) continue;
+    if (data.consumes) {
+      if (depot.stored.metal < (data.consumes.metal||0) || depot.stored.food < (data.consumes.food||0)) continue;
+      depot.stored.metal -= data.consumes.metal || 0; depot.stored.food -= data.consumes.food || 0;
+    }
+    depot.stored.metal = Math.min(100, depot.stored.metal + (data.prod.metal||0));
+    depot.stored.food = Math.min(100, depot.stored.food + (data.prod.food||0));
+    depot.stored.supplies = Math.min(100, depot.stored.supplies + (data.prod.supplies||0));
+  }
+}
+
+let lastMouse = { x:0, y:0 };
+canvas.addEventListener("mousemove", e => {
+  lastMouse = { x:e.clientX, y:e.clientY };
+  const rect=canvas.getBoundingClientRect(), w=screenToWorld(e.clientX-rect.left,e.clientY-rect.top), tile=pickTile(w.x,w.y);
+  
+  document.getElementById("coord").textContent = tile ? `${tile.col}, ${tile.row}` : "-";
+  document.getElementById("terrain").textContent = tile ? terrainData[tile.terrainType].name : "-";
+  
+  if (tile) {
+    if (state.selected && state.selected.type === "ARMY" && !state.selected.isEnemy) {
+      const targetUnit = unitAt(tile.q, tile.r);
+      if (targetUnit && targetUnit.isEnemy && checkAttackTargetable(state.selected, tile)) {
+        setMessage(`[전투 가능] 아군 군대의 사정거리 내에 적국 군사가 있습니다!`);
+        return;
+      }
+    }
+    const tu = unitAt(tile.q, tile.r);
+    if (tu) {
+      setMessage(tu.isEnemy ? "적국 군사입니다." : (tu.type === "ARMY" ? "아군 군대입니다. 공격 범위를 확인하세요." : "지휘관입니다. 지휘망 범위가 활성화됩니다."));
+    } else if (tile.structure) {
+      let msg = `${structureData[tile.structure.type].name}가 위치해 있습니다.`;
+      if (!tile.structure.govConnected) msg += " (경고: 정부 도로망에 연결되지 않아 작동하지 않습니다!)";
+      setMessage(msg);
+    }
+  }
+});
+
+canvas.addEventListener("mousedown", e => {
+  closeMenu();
+  const rect=canvas.getBoundingClientRect(), w=screenToWorld(e.clientX-rect.left,e.clientY-rect.top), tile=pickTile(w.x,w.y);
+  if (!tile) { state.selected = null; state.selectedTile = null; render(); return; }
+  if (state.mode === "EDIT" && state.brush && state.brush.startsWith("border:")) { applyBrush(tile); return; }
+  if (state.mode === "EDIT") return;
+  
+  state.selectedTile = tile; 
+  const unit = unitAt(tile.q,tile.r);
+  
+  if (unit) { 
+    state.selected=unit; 
+    if(!unit.isEnemy) {
+      state.drag={ unit, startX:e.clientX, startY:e.clientY }; 
+      setMessage("유닛 선택됨. 드래그해서 이동하거나 클릭해 상세 메뉴를 여세요.");
+    } else { setMessage("적국 군사를 선택했습니다."); }
+  } else { state.selected = null; }
+  render(); 
+});
+
+canvas.addEventListener("mouseup", e => {
+  const rect=canvas.getBoundingClientRect(), w=screenToWorld(e.clientX-rect.left,e.clientY-rect.top), tile=pickTile(w.x,w.y);
+  const drag = state.drag; state.drag=null;
+  if (!tile) return;
+  if (state.mode === "EDIT") { applyBrush(tile); return; }
+  const movedPointer = drag && Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY) > 8;
+  if (drag && movedPointer) { moveUnit(drag.unit,tile.q,tile.r); return; }
+  
+  const unit = unitAt(tile.q,tile.r);
+  if (unit) { state.selected=unit; unitInfo(unit); render(); return; }
+  if (tile.structure) { structureInfo(tile); render(); return; }
+  if (terrainData[tile.terrainType].buildable) { showBuildMenu(tile); render(); return; }
+});
+
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mX = e.clientX - rect.left; const mY = e.clientY - rect.top;
+  const zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  const nextZoom = Math.max(0.4, Math.min(2.5, state.camera.zoom * zoomFactor));
+
+  if (nextZoom !== state.camera.zoom) {
+    const wX = (mX - canvas.width / 2 - state.camera.x) / state.camera.zoom;
+    const wY = (mY - canvas.height / 2 - state.camera.y) / state.camera.zoom;
+    state.camera.zoom = nextZoom;
+    state.camera.x = mX - canvas.width / 2 - wX * state.camera.zoom;
+    state.camera.y = mY - canvas.height / 2 - wY * state.camera.zoom;
+    render();
+  }
+}, { passive: false });
+
+function applyBrush(tile){
+  if (!state.brush) return;
+  const [kind,value] = state.brush.split(":");
+  
+  if (kind === "border") {
+    if (value === "CLEAR") tile.border = null;
+    else if (value === "DRAW") tile.border = { name: playerNation.name, color: playerNation.color };
+  }
+  if (kind === "terrain") tile.terrainType = value;
+  if (kind === "structure") {
+    if (value === "CLEAR") { tile.structure = null; tile.road = false; tile.radio = false; }
+    else if (value === "ROAD") tile.road = true;
+    else if (value === "RADIO_TOWER") tile.radio = true;
+    else tile.structure = makeStructure(value);
+  }
+  if (kind === "unit") {
+    if (value === "CLEAR") state.units = state.units.filter(u => u.q !== tile.q || u.r !== tile.r);
+    else spawnUnit(value,tile.q,tile.r);
+  }
+  syncTileUnits(); updateGovernmentNetwork(); updateHud(); render();
+}
+
+document.addEventListener("click", e => { 
+  if (!e.target.closest("#menu") && e.target !== canvas && !e.target.closest(".nation-setup")) {
+    closeMenu(); state.selected = null; state.selectedTile = null; render();
+  } 
+});
+
+document.getElementById("nationColor").addEventListener("input", () => { render(); });
+
+document.getElementById("editBtn").onclick = () => {
+  state.mode = state.mode === "PLAY" ? "EDIT" : "PLAY"; state.selected=null; state.selectedTile=null; closeMenu();
+  document.getElementById("editBtn").classList.toggle("active",state.mode==="EDIT");
+  document.getElementById("side").classList.toggle("open",state.mode==="EDIT");
+  setMessage(state.mode === "EDIT" ? "편집 모드. 정부 건물 및 기반 시설과 도로망을 설계해 볼 수 있습니다." : "플레이 모드입니다.");
+  render();
+};
+
+document.getElementById("endBtn").onclick = () => {
+  runProduction(); state.turn += 1;
+  updateGovernmentNetwork(); updateHud(); closeMenu(); 
+  setMessage(`턴 ${state.turn} 시작. 정부망 하의 모든 활성 시설이 가동됩니다.`); render();
+};
+
+document.querySelectorAll(".view").forEach(btn => btn.onclick = () => {
+  document.querySelectorAll(".view").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); state.view=btn.dataset.view; render();
+});
+document.querySelectorAll("[data-brush]").forEach(btn => btn.onclick = () => {
+  document.querySelectorAll("[data-brush]").forEach(b=>b.classList.remove("active"));
+  state.brush = state.brush === btn.dataset.brush ? null : btn.dataset.brush;
+  if (state.brush) btn.classList.add("active");
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") { state.selected=null; state.selectedTile=null; closeMenu(); render(); } });
+window.addEventListener("resize", resize);
+window.hexfrontDebug = { state, reachableTiles, attackDirIndices, attackNeighbor, moveUnit, updateGovernmentNetwork };
+
+initMap(); resize();
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
